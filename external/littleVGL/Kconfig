@@ -1,0 +1,10 @@
+#
+# For a description of the syntax of this configuration file,
+# see kconfig-language at https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+#
+
+config GRAPHIC_LVGL
+	bool "UI library littleVGL"
+	default n
+	---help---
+		Enable littleVGL lib
