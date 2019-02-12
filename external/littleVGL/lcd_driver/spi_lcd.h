@@ -14,8 +14,10 @@
 #ifndef _IOT_SPI_LCD_H_
 #define _IOT_SPI_LCD_H_
 
-#include "driver/spi_master.h"
+//#include "driver/spi_master.h"
 #include "iot_lcd.h"
+
+#define GPIO_NUM_MAX 40
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,36 +1,38 @@
 /*
 
  */
-
+#include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
 
 #include <lvgl.h>
 #include <lv_core/lv_refr.h>
 #include "lvgl_fs.h"
+#include "lvgl_api.h"
+#include "lvgl_disp_config.h"
 
 static pthread_t render_thread_id;
 
-static void* tizenrt_disp_flush = NULL;
-static void* tizenrt_disp_fill = NULL;
-static void* tizenrt_disp_map = NULL;
+static disp_flush_func tizenrt_disp_flush = NULL;
+static disp_fill_func tizenrt_disp_fill = NULL;
+static disp_flush_func tizenrt_disp_map = NULL;
 
-void set_display_flush(void* disp_flush)
+void set_display_flush(disp_flush_func disp_flush)
 {
 	tizenrt_disp_flush = disp_flush;
 }
 
-void set_display_fill(void* disp_fill)
+void set_display_fill(disp_fill_func disp_fill)
 {
 	tizenrt_disp_fill = disp_fill;
 }
 
-void set_display_map(void* disp_map)
+void set_display_map(disp_flush_func disp_map)
 {
 	tizenrt_disp_map = disp_map;
 }
 
-static void littlevgl_refresh_task(void *arg)
+static void* littlevgl_refresh_task(void *arg)
 {
     while (1) {
         /* Periodically call the lv_task handler.
@@ -40,6 +42,8 @@ static void littlevgl_refresh_task(void *arg)
         usleep(10*1000);
         lv_tick_inc(10);
     }
+
+    return NULL;
 }
 
 int lvgl_init(void)

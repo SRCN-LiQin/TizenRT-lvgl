@@ -11,16 +11,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <sys/param.h>
+//#include <sys/param.h>
 #include "spi_lcd.h"
-#include "driver/gpio.h"
+//#include "driver/gpio.h"
+#include <tinyara/gpio.h>
 #include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
-#include "freertos/task.h"
-#define SPIFIFOSIZE 16
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+
+//#include "freertos/FreeRTOS.h"
+//#include "freertos/task.h"
+//#include "freertos/semphr.h"
+//#include "freertos/xtensa_api.h"
+//#include "freertos/task.h"
+//#define SPIFIFOSIZE 16
+
+// Forces data into DRAM instead of flash
+#define DRAM_ATTR __attribute__((section(".dram1")))
+
 
 /*
  This struct stores a bunch of command values to be initialized for ILI9341
@@ -88,13 +98,80 @@ DRAM_ATTR static const lcd_init_cmd_t st7789_init_cmds[] = {
 
 /*This function is called (in irq context!) just before a transmission starts.
 It will set the D/C line to the value indicated in the user field */
-void lcd_spi_pre_transfer_callback(spi_transaction_t *t)
+/*void lcd_spi_pre_transfer_callback(spi_transaction_t *t)
 {
     lcd_dc_t *dc = (lcd_dc_t *) t->user;
     gpio_set_level((int)dc->dc_io, (int)dc->dc_level);
+}*/
+
+#define portTICK_RATE_MS 1
+#define vTaskDelay(t) usleep((t)*1000)
+#define MIN(a,b) ((a)<(b) ? (a):(b))
+
+static sem_t* _spi_mux = NULL;
+static sem_t* xSemaphoreCreateMutex(void)
+{
+	sem_t* x = malloc(sizeof(sem_t));
+	if (x != NULL) {
+		sem_init(x, 0, 1);
+		sem_setprotocol(x, SEM_PRIO_NONE);
+	}
+	return x;
 }
 
-static SemaphoreHandle_t _spi_mux = NULL;
+static void xSemaphoreTake(sem_t* sem , int delay)
+{
+	int ret;
+
+	do {
+		ret = sem_wait(sem);
+		DEBUGASSERT(ret == 0 || errno == EINTR);
+	} while (ret < 0);
+}
+
+static void xSemaphoreGive(sem_t* sem)
+{
+	sem_post(sem);
+}
+
+static int gpio_set_direction(int port, gpio_direciton_t dir)
+{
+	//char buf[4];
+	char devpath[16];
+	snprintf(devpath, 16, "/dev/gpio%d", port);
+	int fd = open(devpath, O_RDWR);
+	if (fd < 0) {
+		printf("fd open fail\n");
+		return -1;
+	}
+
+	ioctl(fd, GPIOIOC_SET_DIRECTION, dir);
+
+	close(fd);
+
+	return 0;
+}
+
+static int gpio_set_level(int port, int value)
+{
+	char buf[4];
+	char devpath[16];
+	snprintf(devpath, 16, "/dev/gpio%d", port);
+	int fd = open(devpath, O_RDWR);
+	if (fd < 0) {
+		printf("fd open fail\n");
+		return -1;
+	}
+
+	ioctl(fd, GPIOIOC_SET_DIRECTION, GPIO_DIRECTION_OUT);
+	if (write(fd, buf, snprintf(buf, sizeof(buf), "%d", !!value)) < 0) {
+		printf("write error\n");
+	}
+	close(fd);
+	return 0;
+}
+
+/*
 static esp_err_t _lcd_spi_send(spi_device_handle_t spi, spi_transaction_t* t)
 {
     xSemaphoreTake(_spi_mux, portMAX_DELAY);
@@ -102,9 +179,23 @@ static esp_err_t _lcd_spi_send(spi_device_handle_t spi, spi_transaction_t* t)
     xSemaphoreGive(_spi_mux);
     return res;
 }
+*/
+
 
 void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd, lcd_dc_t *dc)
 {
+	SPI_LOCK(spi, true);
+//	SPI_SETFREQUENCY(spi_dev, frequency);
+//	SPI_SETBITS(spi_dev, bits);
+//	SPI_SETMODE(spi_dev, conf);
+//	SPI_SELECT(spi_dev, port, true);
+	gpio_set_level((int)dc->dc_io, LCD_CMD_LEV);
+	SPI_SNDBLOCK(spi, &cmd, 1);
+//	SPI_SELECT(spi_dev, port, false);
+	SPI_LOCK(spi, false);
+	return;
+
+/*
     esp_err_t ret;
     dc->dc_level = LCD_CMD_LEV;
     spi_transaction_t t = {
@@ -114,10 +205,23 @@ void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd, lcd_dc_t *dc)
     };
     ret = _lcd_spi_send(spi, &t);       // Transmit!
     assert(ret == ESP_OK);              // Should have had no issues.
+*/
 }
 
 void lcd_data(spi_device_handle_t spi, const uint8_t *data, int len, lcd_dc_t *dc)
 {
+	SPI_LOCK(spi, true);
+//	SPI_SETFREQUENCY(spi_dev, frequency);
+//	SPI_SETBITS(spi_dev, bits);
+//	SPI_SETMODE(spi_dev, conf);
+//	SPI_SELECT(spi_dev, port, true);
+	gpio_set_level((int)dc->dc_io, LCD_DATA_LEV);
+	SPI_SNDBLOCK(spi, data, len);
+//	SPI_SELECT(spi_dev, port, false);
+	SPI_LOCK(spi, false);
+	return;
+
+/*
     esp_err_t ret;
     if (len == 0) {
         return;    //no need to send anything
@@ -131,22 +235,24 @@ void lcd_data(spi_device_handle_t spi, const uint8_t *data, int len, lcd_dc_t *d
     };
     ret = _lcd_spi_send(spi, &t);       // Transmit!
     assert(ret == ESP_OK);              // Should have had no issues.
+*/
 }
 
 uint32_t lcd_init(lcd_conf_t* lcd_conf, spi_device_handle_t *spi_wr_dev, lcd_dc_t *dc, int dma_chan)
 {
+	spi_device_handle_t lcd_handle = NULL;
 
     if (_spi_mux == NULL) {
         _spi_mux = xSemaphoreCreateMutex();
     }
     //Initialize non-SPI GPIOs
     gpio_pad_select_gpio(lcd_conf->pin_num_dc);
-    gpio_set_direction(lcd_conf->pin_num_dc, GPIO_MODE_OUTPUT);
+    gpio_set_direction(lcd_conf->pin_num_dc, GPIO_DIRECTION_OUT);
 
     //Reset the display
     if (lcd_conf->pin_num_rst < GPIO_NUM_MAX) {
         gpio_pad_select_gpio(lcd_conf->pin_num_rst);
-        gpio_set_direction(lcd_conf->pin_num_rst, GPIO_MODE_OUTPUT);
+        gpio_set_direction(lcd_conf->pin_num_rst, GPIO_DIRECTION_OUT);
         gpio_set_level(lcd_conf->pin_num_rst, (lcd_conf->rst_active_level) & 0x1);
         vTaskDelay(100 / portTICK_RATE_MS);
         gpio_set_level(lcd_conf->pin_num_rst, (~(lcd_conf->rst_active_level)) & 0x1);
@@ -155,17 +261,18 @@ uint32_t lcd_init(lcd_conf_t* lcd_conf, spi_device_handle_t *spi_wr_dev, lcd_dc_
 
     if (lcd_conf->init_spi_bus) {
         //Initialize SPI Bus for LCD
-        spi_bus_config_t buscfg = {
+        /*spi_bus_config_t buscfg = {
             .miso_io_num = lcd_conf->pin_num_miso,
             .mosi_io_num = lcd_conf->pin_num_mosi,
             .sclk_io_num = lcd_conf->pin_num_clk,
             .quadwp_io_num = -1,
             .quadhd_io_num = -1,
         };
-        spi_bus_initialize(lcd_conf->spi_host, &buscfg, dma_chan);
+        spi_bus_initialize(lcd_conf->spi_host, &buscfg, dma_chan);*/
     }
+	*spi_wr_dev = lcd_handle = up_spiinitialize(lcd_conf->spi_host); //HSPI_PORT
 
-    spi_device_interface_config_t devcfg = {
+   /* spi_device_interface_config_t devcfg = {
         // Use low speed to read ID.
         .clock_speed_hz = 1 * 1000 * 1000,     //Clock out frequency
         .mode = 0,                                //SPI mode 0
@@ -174,14 +281,19 @@ uint32_t lcd_init(lcd_conf_t* lcd_conf, spi_device_handle_t *spi_wr_dev, lcd_dc_
         .pre_cb = lcd_spi_pre_transfer_callback,  //Specify pre-transfer callback to handle D/C line
     };
     spi_device_handle_t rd_id_handle;
-    spi_bus_add_device(lcd_conf->spi_host, &devcfg, &rd_id_handle);
-    uint32_t lcd_id = lcd_get_id(rd_id_handle, dc);
-    spi_bus_remove_device(rd_id_handle);
+    spi_bus_add_device(lcd_conf->spi_host, &devcfg, &rd_id_handle);*/
+    SPI_SELECT(lcd_handle, 0, true);
+    SPI_SETBITS(lcd_handle, 0);
+    SPI_SETMODE(lcd_handle, SPIDEV_MODE0);
+    SPI_SETFREQUENCY(lcd_handle, (1 * 1000 * 1000));
+    uint32_t lcd_id = lcd_get_id(lcd_handle, dc);
+    //spi_bus_remove_device(rd_id_handle);
 
     // Use high speed to write LCD
-    devcfg.clock_speed_hz = lcd_conf->clk_freq;
+   /* devcfg.clock_speed_hz = lcd_conf->clk_freq;
     devcfg.flags = SPI_DEVICE_HALFDUPLEX;
-    spi_bus_add_device(lcd_conf->spi_host, &devcfg, spi_wr_dev);
+    spi_bus_add_device(lcd_conf->spi_host, &devcfg, spi_wr_dev);*/
+    SPI_SETFREQUENCY(lcd_handle, lcd_conf->clk_freq);
 
     int cmd = 0;
     const lcd_init_cmd_t* lcd_init_cmds = NULL;
@@ -210,7 +322,7 @@ uint32_t lcd_init(lcd_conf_t* lcd_conf, spi_device_handle_t *spi_wr_dev, lcd_dc_
     //Enable backlight
     if (lcd_conf->pin_num_bckl < GPIO_NUM_MAX) {
         gpio_pad_select_gpio(lcd_conf->pin_num_bckl);
-        gpio_set_direction(lcd_conf->pin_num_bckl, GPIO_MODE_OUTPUT);
+        gpio_set_direction(lcd_conf->pin_num_bckl, GPIO_DIRECTION_OUT);
         gpio_set_level(lcd_conf->pin_num_bckl, (lcd_conf->bckl_active_level) & 0x1);
     }
     return lcd_id;
@@ -221,29 +333,46 @@ void lcd_send_uint16_r(spi_device_handle_t spi, const uint16_t data, int32_t rep
     uint32_t i;
     uint32_t word = data << 16 | data;
     uint32_t word_tmp[16];
-    spi_transaction_t t;
-    dc->dc_level = LCD_DATA_LEV;
+    //spi_transaction_t t;
+    //dc->dc_level = LCD_DATA_LEV;
 
     while (repeats > 0) {
-        uint16_t bytes_to_transfer = MIN(repeats * sizeof(uint16_t), SPIFIFOSIZE * sizeof(uint32_t));
+        //uint16_t bytes_to_transfer = MIN(repeats * sizeof(uint16_t), SPIFIFOSIZE * sizeof(uint32_t));
+        uint16_t bytes_to_transfer = MIN(repeats * sizeof(uint16_t), 16 * sizeof(uint32_t));
         for (i = 0; i < (bytes_to_transfer + 3) / 4; i++) {
             word_tmp[i] = word;
         }
-
+/*
         memset(&t, 0, sizeof(t));           //Zero out the transaction
         t.length = bytes_to_transfer * 8;   //Len is in bytes, transaction length is in bits.
         t.tx_buffer = word_tmp;             //Data
         t.user = (void *) dc;               //D/C needs to be set to 1
         _lcd_spi_send(spi, &t);             //Transmit!
+        */
+        lcd_data(spi, (uint8_t*)word_tmp, bytes_to_transfer, dc);
         repeats -= bytes_to_transfer / 2;
     }
 }
 
 uint32_t lcd_get_id(spi_device_handle_t spi, lcd_dc_t *dc)
 {
+	uint32_t buf = 0;
     //get_id cmd
     lcd_cmd( spi, 0x04, dc);
+    
 
+	SPI_LOCK(spi, true);
+//	SPI_SETFREQUENCY(spi_dev, frequency);
+//	SPI_SETBITS(spi_dev, bits);
+//	SPI_SETMODE(spi_dev, conf);
+//	SPI_SELECT(spi_dev, port, true);
+	gpio_set_level((int)dc->dc_io, (int)dc->dc_level);
+	SPI_RECVBLOCK(spi, &buf, 4);
+//	SPI_SELECT(spi_dev, port, false);
+	SPI_LOCK(spi, false);
+	return buf;
+	
+/*
     spi_transaction_t t;
     dc->dc_level = LCD_DATA_LEV;
     memset(&t, 0, sizeof(t));
@@ -253,6 +382,6 @@ uint32_t lcd_get_id(spi_device_handle_t spi, lcd_dc_t *dc)
     esp_err_t ret = _lcd_spi_send(spi, &t);
     assert( ret == ESP_OK );
 
-    return *(uint32_t*) t.rx_data;
+    return *(uint32_t*) t.rx_data;*/
 }
 

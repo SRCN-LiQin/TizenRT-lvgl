@@ -19,11 +19,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* RTOS Includes */
+/* RTOS Includes 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "freertos/semphr.h"
+*/
 
 /* LCD Includes */
 #include "iot_lcd.h"

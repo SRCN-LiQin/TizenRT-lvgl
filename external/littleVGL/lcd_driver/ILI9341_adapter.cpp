@@ -18,7 +18,7 @@
 #include <string.h>
 
 /* RTOS Includes */
-#include "config.h"
+#include <tinyara/config.h>
 #include "lvgl_api.h"
 #include "lvgl_disp_config.h"
 
@@ -229,11 +229,11 @@ void ex_disp_map(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_
     lcd_obj->drawBitmap((int16_t)x1, (int16_t)y1, (const uint16_t *)color_p, (int16_t)(x2 - x1 + 1), (int16_t)(y2 - y1 + 1));
 }
 
-bool lvgl_lcd_display_init()
+void lvgl_lcd_display_init()
 {
     /*Initialize LCD*/
     lcd_conf_t lcd_pins = {
-        .lcd_model = LCD_MOD_AUTO_DET,
+        .lcd_model = LCD_MOD_ILI9341,
         .pin_num_miso = CONFIG_LVGL_LCD_MISO_GPIO, //repalced by CONFIG_GPIO_SPI2_MISO_PIN
         .pin_num_mosi = CONFIG_LVGL_LCD_MOSI_GPIO, //replaced by CONFIG_GPIO_SPI2_MOSI_PIN
         .pin_num_clk = CONFIG_LVGL_LCD_CLK_GPIO, //repalced by CONFIG_GPIO_SPI2_CLK_PIN
@@ -244,12 +244,16 @@ bool lvgl_lcd_display_init()
         .clk_freq = CONFIG_LVGL_LCD_SPI_CLOCK,
         .rst_active_level = 0,
         .bckl_active_level = 0,//CONFIG_LVGL_BCKL_ACTIVE_LEVEL, seems 0 or 1
-        .spi_host = (spi_host_device_t)CONFIG_LVGL_LCD_SPI_NUM,
+        .spi_host = 2, //(spi_host_device_t)CONFIG_LVGL_LCD_SPI_NUM, means HSPI, replaced by spi port para ->ESP32  HSPI_PORT
         .init_spi_bus = true,
     };
 
     if (lcd_obj == NULL) {
-        lcd_obj = new CEspLcdAdapter(&lcd_pins, LV_VER_RES, LV_HOR_RES);
+#ifdef CONFIG_SPI2_DMA_CHANNEL
+        lcd_obj = new CEspLcdAdapter(&lcd_pins, LV_VER_RES, LV_HOR_RES, true, CONFIG_SPI_DMA_MAX_DATALEN, CONFIG_SPI2_DMA_CHANNEL);
+#else
+		lcd_obj = new CEspLcdAdapter(&lcd_pins, LV_VER_RES, LV_HOR_RES);
+#endif
     }
 
 #ifdef CONFIG_LVGL_DISP_ROTATE_0
@@ -281,7 +285,7 @@ bool lvgl_lcd_display_init()
         //disp_drv.disp_map = ex_disp_map;   /*Used in unbuffered mode (LV_VDB_SIZE == 0  in lv_conf.h)*/
     }
 
-    return true;
+    return;
 }
 
 #endif /* CONFIG_LVGL_GUI_ENABLE */

@@ -41,12 +41,12 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "spi_lcd.h"
 #include "font7s.h"
 
-#include "esp_partition.h"
-#include "esp_log.h"
-#include "driver/gpio.h"
+//#include "esp_partition.h"
+//#include "esp_log.h"
+//#include "driver/gpio.h"
 
-#include "freertos/semphr.h"
-#include "freertos/task.h"
+//#include "freertos/semphr.h"
+//#include "freertos/task.h"
 
 /*Rotation Defines*/
 #define MADCTL_MY  0x80
@@ -57,9 +57,11 @@ POSSIBILITY OF SUCH DAMAGE.
 #define MADCTL_BGR 0x08
 #define MADCTL_MH  0x04
 
-
 #define SWAPBYTES(i) ((i>>8) | (i<<8))
 static const char* TAG = "LCD";
+
+//meaningless, not used
+#define portMAX_DELAY 1
 
 CEspLcd::CEspLcd(lcd_conf_t* lcd_conf, int height, int width, bool dma_en, int dma_word_size, int dma_chan) : Adafruit_GFX(width, height)
 {
@@ -68,15 +70,30 @@ CEspLcd::CEspLcd(lcd_conf_t* lcd_conf, int height, int width, bool dma_en, int d
     tabcolor = 0;
     dma_mode = dma_en;
     dma_buf_size = dma_word_size;
-    spi_mux = xSemaphoreCreateRecursiveMutex();
+	sem_init(&spi_mux, 0, 1);
     m_dma_chan = dma_chan;
     setSpiBus(lcd_conf);
 }
 
 CEspLcd::~CEspLcd()
 {
-    spi_bus_remove_device(spi_wr);
-    vSemaphoreDelete(spi_mux);
+    //spi_bus_remove_device(spi_wr); 
+    sem_destroy(&spi_mux);
+}
+
+static void xSemaphoreTakeRecursive(sem_t& sem , int delay)
+{
+	int ret;
+
+	do {
+		ret = sem_wait(&sem);
+		DEBUGASSERT(ret == 0 || errno == EINTR);
+	} while (ret < 0);
+}
+
+static void xSemaphoreGiveRecursive(sem_t& sem)
+{
+	sem_post(&sem);
 }
 
 void CEspLcd::acquireBus()
@@ -237,6 +254,7 @@ void CEspLcd::drawBitmap(int16_t x, int16_t y, const uint16_t *bitmap, int16_t w
     xSemaphoreGiveRecursive(spi_mux);
 }
 
+#if 0
 esp_err_t CEspLcd::drawBitmapFromFlashPartition(int16_t x, int16_t y, int16_t w, int16_t h, esp_partition_t* data_partition, int data_offset, int malloc_pixal_size, bool swap_bytes_en)
 {
     if (data_partition == NULL) {
@@ -266,6 +284,7 @@ esp_err_t CEspLcd::drawBitmapFromFlashPartition(int16_t x, int16_t y, int16_t w,
     xSemaphoreGiveRecursive(spi_mux);
     return ESP_OK;
 }
+#endif
 
 void CEspLcd::drawBitmapFont(int16_t x, int16_t y, uint8_t w, uint8_t h, const uint16_t *bitmap)
 {

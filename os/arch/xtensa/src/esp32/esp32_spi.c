@@ -360,7 +360,7 @@ const spi_device_interface_config_t def_dev_config = {
 	.clock_speed_hz = 1,
 	.input_delay_ns = 0,
 	.spics_io_num = 0,
-	.flags = 0,
+	.flags = SPI_DEVICE_HALFDUPLEX, //0,
 };
 
 static struct esp32_spidev_s g_spi2dev = {

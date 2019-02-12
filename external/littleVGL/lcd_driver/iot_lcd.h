@@ -19,10 +19,13 @@
 #include "string.h"
 #include "stdio.h"
 
-#include "driver/gpio.h"
-#include "driver/spi_master.h"
-#include "esp_partition.h"
-#include "freertos/semphr.h"
+#include <tinyara/spi/spi.h>
+#include <tinyara/gpio.h>
+
+//#include "driver/gpio.h"
+//#include "driver/spi_master.h"
+//#include "esp_partition.h"
+//#include "freertos/semphr.h"
 
 #define LCD_TFTWIDTH  240
 #define LCD_TFTHEIGHT 320
@@ -86,8 +89,8 @@ typedef struct {
     int clk_freq;                /*!< spi clock frequency */
     uint8_t rst_active_level;    /*!< reset pin active level */
     uint8_t bckl_active_level;   /*!< back-light active level */
-    spi_host_device_t spi_host;  /*!< spi host index*/
-    bool init_spi_bus;
+    int spi_host;  /*!< spi host index*/
+    bool init_spi_bus; // 
 } lcd_conf_t;
 
 /**
@@ -105,21 +108,25 @@ typedef struct {
     uint8_t dc_level;
 } lcd_dc_t;
 
+typedef struct spi_dev_s* spi_device_handle_t;
+
 #ifdef __cplusplus
 #include "Adafruit_GFX.h"
+
+typedef int gpio_num_t;
 
 class CEspLcd: public Adafruit_GFX
 {
 private:
-    spi_device_handle_t spi_wr = NULL;
+    spi_device_handle_t spi_wr = NULL; // TODO: handler for spi device
     uint8_t tabcolor;
     bool dma_mode;
     int dma_buf_size;
     uint8_t m_dma_chan;
     uint16_t m_height;
     uint16_t m_width;
-    SemaphoreHandle_t spi_mux;
-    gpio_num_t cmd_io = GPIO_NUM_MAX;
+    sem_t spi_mux;
+    gpio_num_t cmd_io;
     lcd_dc_t dc;
 //protected:
 public:
@@ -190,8 +197,8 @@ public:
      *     - ESP_FAIL if partition is NULL
      *     - ESP_OK on success
      */
-    esp_err_t drawBitmapFromFlashPartition(int16_t x, int16_t y, int16_t w, int16_t h, esp_partition_t* data_partition,
-            int data_offset = 0, int malloc_pixal_size = 1024, bool swap_bytes_en = true);
+   // esp_err_t drawBitmapFromFlashPartition(int16_t x, int16_t y, int16_t w, int16_t h, esp_partition_t* data_partition,
+  //          int data_offset = 0, int malloc_pixal_size = 1024, bool swap_bytes_en = true);
     /**
      * @brief Avoid using it, Internal use for main class drawChar API
      */
