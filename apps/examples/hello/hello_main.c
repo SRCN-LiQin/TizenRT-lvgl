@@ -61,12 +61,19 @@
  * hello_main
  ****************************************************************************/
 
+extern int lvgl_main(int argc, FAR char *argv[]);
+int ignore_first = 1;
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
 int hello_main(int argc, char *argv[])
 #endif
 {
-	printf("Hello, World!!\n");
+	if(ignore_first) {
+		ignore_first = 0;
+		return;
+	}
+	printf("Hello, World11!!\n");
+	lvgl_main(argc, argv);
 	return 0;
 }

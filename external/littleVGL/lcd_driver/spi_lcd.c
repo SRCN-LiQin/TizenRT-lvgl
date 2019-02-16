@@ -141,7 +141,7 @@ static int gpio_set_direction(int port, gpio_direciton_t dir)
 	snprintf(devpath, 16, "/dev/gpio%d", port);
 	int fd = open(devpath, O_RDWR);
 	if (fd < 0) {
-		printf("fd open fail\n");
+		printf("fd open %s fail\n",devpath);
 		return -1;
 	}
 
@@ -152,7 +152,9 @@ static int gpio_set_direction(int port, gpio_direciton_t dir)
 	return 0;
 }
 
-static int gpio_set_level(int port, int value)
+//static int gpio_set_level(int port, int value)
+int gpio_set_level(int port, int value)
+
 {
 	char buf[4];
 	char devpath[16];
@@ -210,6 +212,8 @@ void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd, lcd_dc_t *dc)
 
 void lcd_data(spi_device_handle_t spi, const uint8_t *data, int len, lcd_dc_t *dc)
 {
+	printf("[lcd_data] len %d\n",len);
+
 	SPI_LOCK(spi, true);
 //	SPI_SETFREQUENCY(spi_dev, frequency);
 //	SPI_SETBITS(spi_dev, bits);
@@ -282,10 +286,11 @@ uint32_t lcd_init(lcd_conf_t* lcd_conf, spi_device_handle_t *spi_wr_dev, lcd_dc_
     };
     spi_device_handle_t rd_id_handle;
     spi_bus_add_device(lcd_conf->spi_host, &devcfg, &rd_id_handle);*/
-    SPI_SELECT(lcd_handle, 0, true);
-    SPI_SETBITS(lcd_handle, 0);
+    SPI_SELECT(lcd_handle, 1, true);
+    SPI_SETBITS(lcd_handle, 8);
     SPI_SETMODE(lcd_handle, SPIDEV_MODE0);
     SPI_SETFREQUENCY(lcd_handle, (1 * 1000 * 1000));
+    //SPI_SETFREQUENCY(lcd_handle, lcd_conf->clk_freq);
     uint32_t lcd_id = lcd_get_id(lcd_handle, dc);
     //spi_bus_remove_device(rd_id_handle);
 
@@ -318,13 +323,15 @@ uint32_t lcd_init(lcd_conf_t* lcd_conf, spi_device_handle_t *spi_wr_dev, lcd_dc_
         }
         cmd++;
     }
-
+    
     //Enable backlight
     if (lcd_conf->pin_num_bckl < GPIO_NUM_MAX) {
         gpio_pad_select_gpio(lcd_conf->pin_num_bckl);
         gpio_set_direction(lcd_conf->pin_num_bckl, GPIO_DIRECTION_OUT);
         gpio_set_level(lcd_conf->pin_num_bckl, (lcd_conf->bckl_active_level) & 0x1);
     }
+
+    printf("[lcd_init] finished.\n");
     return lcd_id;
 }
 
@@ -356,17 +363,18 @@ void lcd_send_uint16_r(spi_device_handle_t spi, const uint16_t data, int32_t rep
 
 uint32_t lcd_get_id(spi_device_handle_t spi, lcd_dc_t *dc)
 {
-	uint32_t buf = 0;
+	char buf[6] = {0xff,};
+	//uint32_t buf = 0;
     //get_id cmd
+    printf("[lcd_get_id]dc->dc_io id %d\n", dc->dc_io);
     lcd_cmd( spi, 0x04, dc);
-    
 
 	SPI_LOCK(spi, true);
 //	SPI_SETFREQUENCY(spi_dev, frequency);
 //	SPI_SETBITS(spi_dev, bits);
 //	SPI_SETMODE(spi_dev, conf);
 //	SPI_SELECT(spi_dev, port, true);
-	gpio_set_level((int)dc->dc_io, (int)dc->dc_level);
+	gpio_set_level((int)dc->dc_io, LCD_DATA_LEV);
 	SPI_RECVBLOCK(spi, &buf, 4);
 //	SPI_SELECT(spi_dev, port, false);
 	SPI_LOCK(spi, false);

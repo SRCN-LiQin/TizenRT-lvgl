@@ -280,7 +280,7 @@ public:
 
     int drawFloat(float floatNumber, uint8_t decimal, uint16_t poX, uint16_t poY);
 
-    size_t printf(const char *format, ...);
+    //size_t printf(const char *format, ...);
 };
 
 #endif

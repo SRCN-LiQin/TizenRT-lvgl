@@ -56,6 +56,8 @@
 #include "periph_ctrl.h"
 
 #include "esp32_spi.h"
+#include "arch/chip/gpio_struct.h"
+#include <tinyara/gpio.h>
 
 /****************************************************************************
  * Definitions
@@ -118,6 +120,7 @@
 
 #undef spiinfo
 #define spiinfo(format, ...)
+//#define spiinfo printf
 
 
 //
@@ -372,7 +375,7 @@ static struct esp32_spidev_s g_spi2dev = {
 	.dma_chan = 0,
 #endif
 	.port = HSPI_PORT,
-	.periph_module = PERIPH_VSPI_MODULE,
+	.periph_module = PERIPH_HSPI_MODULE,
 	.initiallized = 0,
 
 	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL,
@@ -855,7 +858,7 @@ static void spi_new_trans(struct spi_dev_s *dev, const void *txbuffer, void *rxb
 			//priv->hw->dma_in_link.addr = (int)(priv->dmadesc_rx.head) & 0xFFFFF;
 			priv->hw->dma_in_link.addr = (uint32_t)(priv->dmadesc_rx.head);
 			priv->hw->dma_in_link.start = 1;
-			spiinfo("[SPI] DMA start rx %p~%p; %d...\n", priv->dmadesc_rx.head, priv->dmadesc_rx.tail, nbits);
+			//spiinfo("[SPI] DMA start rx %p~%p; %d...\n", priv->dmadesc_rx.head, priv->dmadesc_rx.tail, nbits);
 		}
 		//when no_dummy is not set and in half-duplex mode, sets the dummy bit if RX phase exist
 		if (((def_dev_config.flags & SPI_DEVICE_NO_DUMMY) == 0) && (def_dev_config.flags & SPI_DEVICE_HALFDUPLEX)) {
@@ -881,7 +884,7 @@ static void spi_new_trans(struct spi_dev_s *dev, const void *txbuffer, void *rxb
 			spicommon_setup_dma_desc_links(&(priv->dmadesc_tx), nbits / 8, (uint8_t *)txbuffer, false);
 			priv->hw->dma_out_link.addr = (uint32_t)(priv->dmadesc_tx.head);
 			priv->hw->dma_out_link.start = 1;
-			spiinfo("[SPI] DMA start tx %p~%p; %d...\n", priv->dmadesc_tx.head, priv->dmadesc_tx.tail, nbits);
+			//spiinfo("[SPI] DMA start tx %p~%p; %d...\n", priv->dmadesc_tx.head, priv->dmadesc_tx.tail, nbits);
 		}
 	}
 	/* SPI iface needs to be configured for a delay in some cases.
@@ -1057,7 +1060,7 @@ static void spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbu
 		}
 #endif
 		spi_post_trans(dev, pRdBuf, flen);
-
+		
 		sent += flen;
 		received += flen;
 		len -= flen;
@@ -1149,12 +1152,18 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 		gpio_matrix_in(priv->gpio_mosi, p_pin_sig->spimosi_in, 0);
 		gpio_matrix_out(priv->gpio_mosi, p_pin_sig->spimosi_out, 0, 0);
 		esp32_configgpio(priv->gpio_mosi, func);
+		spiinfo("[SPI] gpio_mosi %d: %d %d \n", priv->gpio_mosi, GPIO.func_in_sel_cfg[p_pin_sig->spimosi_in].func_sel, func);
 	}
 
 	if (priv->gpio_miso >= 0) {
 		gpio_matrix_in(priv->gpio_miso, p_pin_sig->spimiso_in, 0);
-		gpio_matrix_out(priv->gpio_miso, p_pin_sig->spimiso_out, 0, 0);
+		func = (INPUT | FUNCTION_2);
+		if (priv->work_mode & SPICOMMON_BUSFLAG_DUAL) {
+			gpio_matrix_out(priv->gpio_miso, p_pin_sig->spimiso_out, 0, 0);
+			func |= OUTPUT;
+		}
 		esp32_configgpio(priv->gpio_miso, func);
+		spiinfo("[SPI] gpio_miso %d: %d %d \n", priv->gpio_miso, GPIO.func_in_sel_cfg[p_pin_sig->spimiso_in].func_sel, func);
 	}
 
 	if (priv->gpio_quadwp >= 0 && priv->gpio_quadwp < GPIO_PIN_COUNT) {
@@ -1173,13 +1182,18 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 		gpio_matrix_in(priv->gpio_clk, p_pin_sig->spiclk_in, 0);
 		gpio_matrix_out(priv->gpio_clk, p_pin_sig->spiclk_in, 0, 0);
 		esp32_configgpio(priv->gpio_clk, func);
+		
+		spiinfo("[SPI] esp32_clk %d: %d %d \n", priv->gpio_clk, GPIO.func_in_sel_cfg[p_pin_sig->spiclk_in].func_sel, func);
 	}
 	if (priv->work_mode & SPICOMMON_BUSFLAG_MASTER) {
-		for (int i = 0; i < MAX_CS_NUM; i++) {
+		for (int i = 1; i < MAX_CS_NUM; i++) {
 			if (priv->gpio_nss[i] >= 0 && priv->gpio_nss[i] < GPIO_PIN_COUNT) {
-				gpio_matrix_in(priv->gpio_nss[i], p_pin_sig->spics_out[i], 0);
+				if (i == 0)
+					gpio_matrix_in(priv->gpio_nss[i], p_pin_sig->spics_in, 0);
+
 				gpio_matrix_out(priv->gpio_nss[i], p_pin_sig->spics_out[i], 0, 0);
 				esp32_configgpio(priv->gpio_nss[i], func);
+				spiinfo("[SPI] esp32_cs %d: %d %d \n", priv->gpio_nss[i], GPIO.func_out_sel_cfg[priv->gpio_nss[i]].func_sel, func);
 			}
 		}
 	} else {
@@ -1474,6 +1488,7 @@ int spi_select_device(struct esp32_spidev_s *priv, int dev_id, const spi_device_
 	priv->hw->ctrl2.mosi_delay_num = 0;
 
 	/*Record the device just configured to save time for next time */
+	priv->cur_cs = dev_id;
 	priv->prev_cs = dev_id;
 
 	spi_config_device(priv, dev_config);
@@ -1564,7 +1579,7 @@ struct spi_dev_s *up_spiinitialize(int port)
 		esp32_spi_Disable_ints(priv);
 		esp32_spi_Clear_ints(priv);
 
-		spi_select_device(priv, 0, &def_dev_config);
+		spi_select_device(priv, 1, &def_dev_config);
 
 		priv->initiallized = true;
 	}

@@ -70,8 +70,9 @@ CSRCS += $(notdir $(wildcard ./lcd_driver/*.c))
 CSRCS += \
 	lcd_driver/Adafruit-GFX-Library/glcdfont.c	\
 
-CXXSRCS += lcd_driver/ILI9341_adapter.cpp
-CXXSRCS += lcd_driver/iot_lcd.cpp
+CXXSRCS += lcd_driver/ILI9341_adapter.cpp \
+			lcd_driver/iot_lcd.cpp \
+			lcd_driver/adaptation.cpp
 CXXSRCS += lcd_driver/Adafruit-GFX-Library/Adafruit_GFX.cpp
 	
 CXXFLAGS += -D__TINYARA__

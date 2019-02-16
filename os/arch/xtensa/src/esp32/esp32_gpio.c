@@ -201,7 +201,8 @@ int esp32_configgpio(int pin, gpio_pinattr_t attr)
 
 	/* Handle output pins */
 
-	else if ((attr & OUTPUT) != 0) {
+	//else if ((attr & OUTPUT) != 0) {
+	if ((attr & OUTPUT) != 0) {
 		if (pin < 32) {
 			putreg32((1ul << pin), GPIO_ENABLE_W1TS_REG);
 		} else {

@@ -46,7 +46,7 @@ static bool    inited = false;
 /**
  * Create a driver for ufs and initialize it.
  */
-void lv_ufs_init(void)
+void lv_ufs_init_abandon(void)
 {
     lv_ll_init(&file_ll, sizeof(lv_ufs_ent_t));
 
