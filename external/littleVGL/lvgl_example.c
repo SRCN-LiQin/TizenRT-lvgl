@@ -4,10 +4,14 @@
 #include <stdio.h>
 #include <lvgl_api.h>
 
+#define TEST_BAISC_TEXT 0
+#define TEST_THEME 1
 
 void my_disp_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_p);
 void my_disp_fill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, lv_color_t color);
 void my_disp_map(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_p);
+
+static lv_obj_t *tabview = NULL;
 
 static lv_obj_t *chart = NULL;
 static lv_obj_t *gauge = NULL;
@@ -18,18 +22,31 @@ static lv_res_t on_led_switch_toggled(lv_obj_t *sw)
     return LV_RES_OK;
 }
 
+static pthread_t ui_thread_id;
+static void* ui_refresh_task(void *arg)
+{
+	int i = 1;
+	while (1) {
+		sleep(10);
+		lv_tabview_set_tab_act(tabview, i, true);
+		i++;
+		i %= 3;
+	}
+
+    return NULL;
+}
+
 int lvgl_main(int argc, FAR char *argv[])
 {
 	//set_display_flush(my_disp_flush);
 	//set_display_fill(my_disp_fill);
 	//set_display_map(my_disp_map);
-
 	if(lvgl_init() != 0) {
 		printf("lvgl_init failed!\n");
 		return -1;
 	}
 
-#if 0
+#if TEST_BAISC_TEXT
 	lv_style_t style;
 	lv_obj_t *screen = lv_scr_act();
 	lv_obj_t *hello_world_label = lv_label_create(screen, NULL);
@@ -51,22 +68,26 @@ int lvgl_main(int argc, FAR char *argv[])
 		sleep(2);
 	}
 #endif
+
+#if TEST_THEME
     lv_obj_t *scr = lv_obj_create(NULL, NULL);
     lv_scr_load(scr);
 
     lv_theme_t *th = lv_theme_alien_init(100, NULL);
     lv_theme_set_current(th);
 
-    lv_obj_t *tabview = lv_tabview_create(lv_scr_act(), NULL);
+    tabview = lv_tabview_create(lv_scr_act(), NULL);
+	lv_obj_align(tabview, NULL, LV_ALIGN_IN_TOP_MID, 0, 0);
 
     lv_obj_t *tab1 = lv_tabview_add_tab(tabview, SYMBOL_LOOP);
     lv_obj_t *tab2 = lv_tabview_add_tab(tabview, SYMBOL_HOME);
     lv_obj_t *tab3 = lv_tabview_add_tab(tabview, SYMBOL_SETTINGS);
-    lv_tabview_set_tab_act(tabview, 1, false);
+    lv_tabview_set_tab_act(tabview, 0, true); //false
+	//lv_tabview_set_anim_time(tabview, 100); //default config 300
 
     chart = lv_chart_create(tab2, NULL);
     lv_obj_set_size(chart, 300, 150);
-    lv_chart_set_point_count(chart, 20);
+    lv_chart_set_point_count(chart, 10); //20
     lv_obj_align(chart, NULL, LV_ALIGN_CENTER, 0, 0);
     lv_chart_set_type(chart, (lv_chart_type_t)(LV_CHART_TYPE_POINT | LV_CHART_TYPE_LINE));
     lv_chart_set_series_opa(chart, LV_OPA_70);
@@ -74,7 +95,7 @@ int lvgl_main(int argc, FAR char *argv[])
     lv_chart_set_range(chart, 0, 100);
     series = lv_chart_add_series(chart, LV_COLOR_RED);
 
-    static lv_color_t needle_colors[] = {LV_COLOR_RED};
+    static lv_color_t needle_colors[] = {LV_COLOR_BLUE, LV_COLOR_YELLOW};
     gauge = lv_gauge_create(tab1, NULL);
     lv_gauge_set_needle_count(gauge,
                               sizeof(needle_colors) / sizeof(needle_colors[0]), needle_colors);
@@ -102,7 +123,22 @@ int lvgl_main(int argc, FAR char *argv[])
         lv_obj_align(switches[i], labels[i], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
         lv_sw_set_action(switches[i], on_led_switch_toggled);
     }
+    
+	if (pthread_create(&ui_thread_id, NULL, ui_refresh_task, NULL) != 0) {
+		printf("failed to create refresh task\n");
+		return -1;
+	}
+	pthread_setname_np(ui_thread_id, "UI refresher");
 
+	//sleep(3);
+/*	i = 1;
+	while (1) {
+		lv_tabview_set_tab_act(tabview, i, true);
+		i++;
+		i %= 3;
+		sleep(20);
+	}*/
+#endif
 
 	return 0;
 }

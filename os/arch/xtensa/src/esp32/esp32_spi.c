@@ -56,8 +56,6 @@
 #include "periph_ctrl.h"
 
 #include "esp32_spi.h"
-#include "arch/chip/gpio_struct.h"
-#include <tinyara/gpio.h>
 
 /****************************************************************************
  * Definitions
@@ -1152,7 +1150,6 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 		gpio_matrix_in(priv->gpio_mosi, p_pin_sig->spimosi_in, 0);
 		gpio_matrix_out(priv->gpio_mosi, p_pin_sig->spimosi_out, 0, 0);
 		esp32_configgpio(priv->gpio_mosi, func);
-		spiinfo("[SPI] gpio_mosi %d: %d %d \n", priv->gpio_mosi, GPIO.func_in_sel_cfg[p_pin_sig->spimosi_in].func_sel, func);
 	}
 
 	if (priv->gpio_miso >= 0) {
@@ -1163,7 +1160,6 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 			func |= OUTPUT;
 		}
 		esp32_configgpio(priv->gpio_miso, func);
-		spiinfo("[SPI] gpio_miso %d: %d %d \n", priv->gpio_miso, GPIO.func_in_sel_cfg[p_pin_sig->spimiso_in].func_sel, func);
 	}
 
 	if (priv->gpio_quadwp >= 0 && priv->gpio_quadwp < GPIO_PIN_COUNT) {
@@ -1182,8 +1178,6 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 		gpio_matrix_in(priv->gpio_clk, p_pin_sig->spiclk_in, 0);
 		gpio_matrix_out(priv->gpio_clk, p_pin_sig->spiclk_in, 0, 0);
 		esp32_configgpio(priv->gpio_clk, func);
-		
-		spiinfo("[SPI] esp32_clk %d: %d %d \n", priv->gpio_clk, GPIO.func_in_sel_cfg[p_pin_sig->spiclk_in].func_sel, func);
 	}
 	if (priv->work_mode & SPICOMMON_BUSFLAG_MASTER) {
 		for (int i = 1; i < MAX_CS_NUM; i++) {
@@ -1193,7 +1187,6 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 
 				gpio_matrix_out(priv->gpio_nss[i], p_pin_sig->spics_out[i], 0, 0);
 				esp32_configgpio(priv->gpio_nss[i], func);
-				spiinfo("[SPI] esp32_cs %d: %d %d \n", priv->gpio_nss[i], GPIO.func_out_sel_cfg[priv->gpio_nss[i]].func_sel, func);
 			}
 		}
 	} else {

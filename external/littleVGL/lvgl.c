@@ -34,13 +34,14 @@ void set_display_map(disp_flush_func disp_map)
 
 static void* littlevgl_refresh_task(void *arg)
 {
+	usleep(50*100);
     while (1) {
         /* Periodically call the lv_task handler.
          * It could be done in a timer interrupt or an OS task too.*/
-        lv_task_handler();
+		lv_tick_inc(10);
+		lv_task_handler();
         //printf("littlevgl_refresh_task\n");
-        usleep(10*1000);
-        lv_tick_inc(10);
+		usleep(10*1000);
     }
 
     return NULL;

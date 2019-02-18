@@ -212,8 +212,6 @@ void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd, lcd_dc_t *dc)
 
 void lcd_data(spi_device_handle_t spi, const uint8_t *data, int len, lcd_dc_t *dc)
 {
-	printf("[lcd_data] len %d\n",len);
-
 	SPI_LOCK(spi, true);
 //	SPI_SETFREQUENCY(spi_dev, frequency);
 //	SPI_SETBITS(spi_dev, bits);
