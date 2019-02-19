@@ -123,21 +123,14 @@ int lvgl_main(int argc, FAR char *argv[])
         lv_obj_align(switches[i], labels[i], LV_ALIGN_OUT_RIGHT_MID, 10, 0);
         lv_sw_set_action(switches[i], on_led_switch_toggled);
     }
-    
+
 	if (pthread_create(&ui_thread_id, NULL, ui_refresh_task, NULL) != 0) {
 		printf("failed to create refresh task\n");
 		return -1;
 	}
-	pthread_setname_np(ui_thread_id, "UI refresher");
+	pthread_setname_np(ui_thread_id, "UI_animation");
+	pthread_detach(ui_thread_id);
 
-	//sleep(3);
-/*	i = 1;
-	while (1) {
-		lv_tabview_set_tab_act(tabview, i, true);
-		i++;
-		i %= 3;
-		sleep(20);
-	}*/
 #endif
 
 	return 0;

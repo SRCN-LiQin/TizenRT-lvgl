@@ -40,6 +40,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "iot_lcd.h"
 #include "spi_lcd.h"
 #include "font7s.h"
+#include <errno.h>
 
 //#include "esp_partition.h"
 //#include "esp_log.h"

@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 //#include "freertos/FreeRTOS.h"
 //#include "freertos/task.h"
