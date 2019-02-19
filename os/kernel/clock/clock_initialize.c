@@ -276,10 +276,12 @@ void clock_synchronize(void)
  ****************************************************************************/
 
 #ifndef CONFIG_SCHED_TICKLESS
+extern void lv_tick_inc(uint32_t tick_period);
 void clock_timer(void)
 {
 	/* Increment the per-tick system counter */
 
 	g_system_timer++;
+	lv_tick_inc(1);
 }
 #endif

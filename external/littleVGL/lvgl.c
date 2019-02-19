@@ -38,7 +38,7 @@ static void* littlevgl_refresh_task(void *arg)
     while (1) {
         /* Periodically call the lv_task handler.
          * It could be done in a timer interrupt or an OS task too.*/
-		lv_tick_inc(10);
+		//lv_tick_inc(10);
 		lv_task_handler();
         //printf("littlevgl_refresh_task\n");
 		usleep(10*1000);
