@@ -196,7 +196,7 @@
 #define USE_LV_TABVIEW 1
 #if USE_LV_TABVIEW != 0
 #define LV_TABVIEW_ANIM_TIME \
-    300 /*Time of slide animation [ms] (0: no animation)*/
+    100 /*Time of slide animation [ms] (0: no animation)*/
 #endif
 
 /*************************
