@@ -30,7 +30,7 @@ static void* ui_refresh_task(void *arg)
 {
 	int i = 1;
 	while (1) {
-		sleep(10);
+		sleep(6);
 		lv_tabview_set_tab_act(tabview, i, true);
 		i++;
 		i %= 3;
@@ -162,7 +162,7 @@ if (atoi(argv[1]) == 1) {
 	lv_obj_t *tab2 = lv_tabview_add_tab(tabview, SYMBOL_HOME);
 	lv_obj_t *tab3 = lv_tabview_add_tab(tabview, SYMBOL_SETTINGS);
 	lv_tabview_set_tab_act(tabview, 0, true); //false
-	lv_tabview_set_anim_time(tabview, 100); //default config 300
+	lv_tabview_set_anim_time(tabview, 0); //default config 300
 
 	chart = lv_chart_create(tab2, NULL);
 	lv_obj_set_size(chart, 300, 150);
@@ -173,6 +173,8 @@ if (atoi(argv[1]) == 1) {
 	lv_chart_set_series_width(chart, 4);
 	lv_chart_set_range(chart, 0, 100);
 	series = lv_chart_add_series(chart, LV_COLOR_RED);
+	lv_coord_t chartV[10] = {70, 44, 26, 10, 66, 40, 30, 56, 80, 60,};
+	lv_chart_set_points(chart, series, chartV);
 
 	static lv_color_t needle_colors[] = {LV_COLOR_BLUE, LV_COLOR_YELLOW};
 	gauge = lv_gauge_create(tab1, NULL);
@@ -351,6 +353,7 @@ if(atoi(argv[1]) == 2) {
 	lv_roller_set_selected(roller, 3, true);
 	lv_roller_set_visible_row_count(roller, 5);
 	lv_ddlist_set_action(roller, roller_action);
+	lv_ddlist_set_anim_time(roller, 100);
 	lv_obj_set_pos(roller, 140, 20);
 	
 	if (pthread_create(&list_thread_id, NULL, list_refresh_task, NULL) != 0) {

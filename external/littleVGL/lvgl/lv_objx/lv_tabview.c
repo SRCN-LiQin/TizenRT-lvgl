@@ -123,7 +123,7 @@ lv_obj_t *lv_tabview_create(lv_obj_t *par, lv_obj_t *copy)
         lv_cont_set_layout(ext->content, LV_LAYOUT_ROW_T);
         lv_cont_set_style(ext->content, &lv_style_transp_tight);
         lv_obj_set_height(ext->content,
-                          60/*LV_VER_RES - lv_obj_get_height(ext->btns)*/);
+                          LV_VER_RES - lv_obj_get_height(ext->btns));
         lv_obj_align(ext->content, ext->btns, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
 
         /*Set the default styles*/
@@ -823,8 +823,8 @@ static void tabview_realign(lv_obj_t *tabview)
         lv_obj_set_height(ext->btns, btns_height);
     }
 
-    lv_obj_set_height(ext->content, 60/*lv_obj_get_height(tabview) -
-                                      lv_obj_get_height(ext->btns)*/);
+    lv_obj_set_height(ext->content, lv_obj_get_height(tabview) -
+                                      lv_obj_get_height(ext->btns));
     lv_obj_align(ext->content, ext->btns, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
 
     lv_obj_t *pages = lv_obj_get_child(ext->content, NULL);
