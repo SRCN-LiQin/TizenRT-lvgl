@@ -114,6 +114,8 @@ static void* list_refresh_task(void *arg)
 
 #endif
 
+#define SELECT_THEME lv_theme_night_init
+
 int lvgl_main(int argc, FAR char *argv[])
 {
 	//set_display_flush(my_disp_flush);
@@ -152,7 +154,7 @@ if (atoi(argv[1]) == 1) {
 	lv_obj_t *scr = lv_obj_create(NULL, NULL);
 	lv_scr_load(scr);
 
-	lv_theme_t *th = lv_theme_alien_init(100, NULL);
+	lv_theme_t *th = SELECT_THEME(100, NULL);
 	lv_theme_set_current(th);
 
 	tabview = lv_tabview_create(lv_scr_act(), NULL);  //ANIMATION EXAMPLE
@@ -162,7 +164,7 @@ if (atoi(argv[1]) == 1) {
 	lv_obj_t *tab2 = lv_tabview_add_tab(tabview, SYMBOL_HOME);
 	lv_obj_t *tab3 = lv_tabview_add_tab(tabview, SYMBOL_SETTINGS);
 	lv_tabview_set_tab_act(tabview, 0, true); //false
-	lv_tabview_set_anim_time(tabview, 0); //default config 300
+	lv_tabview_set_anim_time(tabview, 1000); //default config 300
 
 	chart = lv_chart_create(tab2, NULL);
 	lv_obj_set_size(chart, 300, 150);
@@ -215,7 +217,7 @@ if(atoi(argv[1]) == 2) {
 	lv_obj_t *scr = lv_obj_create(NULL, NULL);
 	lv_scr_load(scr);
 
-	lv_theme_t *th = lv_theme_alien_init(100, NULL);
+	lv_theme_t *th = SELECT_THEME(100, NULL);
 	lv_theme_set_current(th);
 
 	lv_obj_t * parent = scr;//lv_page_create(scr, NULL);
@@ -229,7 +231,7 @@ if(atoi(argv[1]) == 2) {
 	h_style.body.padding.ver = LV_DPI / 6;
 
 	lv_obj_t * h = lv_cont_create(parent, NULL);
-	lv_obj_set_style(h, &h_style);
+	//lv_obj_set_style(h, &h_style);
 	lv_obj_set_click(h, false);
 	lv_obj_set_size(h, 320,240);// set size OR set fit + layout
 	//lv_cont_set_fit(h, true, true);
@@ -295,8 +297,8 @@ if(atoi(argv[1]) == 2) {
 	lv_bar_set_value(slider, 70);
 */
 
-/*   //1 Line, 1 Text area, 2 CheckBoxes, 1 Drop down list - NO FIT, NO LAYOUT, SET POS by each widget
-	lv_obj_t * line = lv_line_create(h, NULL);
+   // Line, 1 Text area, 2 CheckBoxes, 1 Drop down list - NO FIT, NO LAYOUT, SET POS by each widget
+/*	lv_obj_t * line = lv_line_create(h, NULL);
 	static const lv_point_t line_p[] = {{0, 0}, {LV_HOR_RES / 5, 0}};
 	lv_line_set_points(line, line_p, 2);
 	lv_line_set_style(line, th->line.decor);
@@ -326,9 +328,10 @@ if(atoi(argv[1]) == 2) {
 		return -1;
 	}
 	pthread_setname_np(ui_thread_id, "UI_animation");
-*/
+	*/
 
-	h = lv_cont_create(parent, h);
+
+	//h = lv_cont_create(parent, h);
 	// 1 List with 10 items, 1 Scroller with 7 items
 	list = lv_list_create(h, NULL);
 	lv_obj_t * list_btn;
@@ -345,7 +348,7 @@ if(atoi(argv[1]) == 2) {
 	lv_list_add(list, SYMBOL_EDIT, "Edit", NULL);
 	lv_list_add(list, SYMBOL_CUT,  "Cut",  NULL);
 	lv_list_add(list, SYMBOL_COPY, "Copy", NULL);
-	lv_list_set_anim_time(list, 0); //NO AMINIATION
+	lv_list_set_anim_time(list, 1000); //NO AMINIATION
 	lv_list_set_sb_mode(list, LV_SB_MODE_ON);
 
 	roller = lv_roller_create(h, NULL); // ==> GOOD SCROLLER effect
@@ -353,7 +356,7 @@ if(atoi(argv[1]) == 2) {
 	lv_roller_set_selected(roller, 3, true);
 	lv_roller_set_visible_row_count(roller, 5);
 	lv_ddlist_set_action(roller, roller_action);
-	lv_ddlist_set_anim_time(roller, 100);
+	lv_ddlist_set_anim_time(roller, 1000);
 	lv_obj_set_pos(roller, 140, 20);
 	
 	if (pthread_create(&list_thread_id, NULL, list_refresh_task, NULL) != 0) {

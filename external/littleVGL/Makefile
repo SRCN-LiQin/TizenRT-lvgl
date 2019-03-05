@@ -61,9 +61,10 @@ CXXSRCS		=
 CSRCS += $(notdir $(wildcard ./*.c))
 CSRCS += $(notdir $(wildcard ./lvgl/lv_core/*.c))
 CSRCS += $(notdir $(wildcard ./lvgl/lv_draw/*.c))
+CSRCS += $(notdir $(wildcard ./lvgl/lv_fonts/*.c))
 CSRCS += $(notdir $(wildcard ./lvgl/lv_hal/*.c))
 CSRCS += $(notdir $(wildcard ./lvgl/lv_misc/*.c))
-CSRCS += $(notdir $(wildcard ./lvgl/lv_misc/lv_fonts/*.c))
+#CSRCS += $(notdir $(wildcard ./lvgl/lv_misc/lv_fonts/*.c))
 CSRCS += $(notdir $(wildcard ./lvgl/lv_objx/*.c))
 CSRCS += $(notdir $(wildcard ./lvgl/lv_themes/*.c))
 CSRCS += $(notdir $(wildcard ./lcd_driver/*.c))
@@ -103,12 +104,12 @@ else
 endif
 endif
 
-DEPPATH	= --dep-path . --dep-path lvgl/lv_core --dep-path lvgl/lv_draw --dep-path lvgl/lv_hal --dep-path lvgl/lv_misc --dep-path lvgl/lv_misc/lv_fonts \
+DEPPATH	= --dep-path . --dep-path lvgl/lv_core --dep-path lvgl/lv_draw --dep-path lvgl/lv_hal --dep-path lvgl/lv_misc --dep-path lvgl/lv_fonts \
 			--dep-path lvgl/lv_objx --dep-path lvgl/lv_themes --dep-path lcd_driver --dep-path lcd_driver/Adafruit-GFX-Library
 
 # Common build
 
-VPATH	= :lvgl/lv_core :lvgl/lv_draw :lvgl/lv_hal :lvgl/lv_misc :lvgl/lv_misc/lv_fonts :lvgl/lv_objx :lvgl/lv_themes :lcd_driver :lcd_driver/Adafruit-GFX-Library
+VPATH	= :lvgl/lv_core :lvgl/lv_draw :lvgl/lv_hal :lvgl/lv_misc :lvgl/lv_fonts :lvgl/lv_objx :lvgl/lv_themes :lcd_driver :lcd_driver/Adafruit-GFX-Library
 
 all: .built
 .PHONY: depend clean distclean chkcxx
