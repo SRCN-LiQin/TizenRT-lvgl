@@ -376,7 +376,7 @@ static struct esp32_spidev_s g_spi2dev = {
 	.periph_module = PERIPH_HSPI_MODULE,
 	.initiallized = 0,
 
-	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL,
+	.work_mode = SPICOMMON_BUSFLAG_MASTER | SPICOMMON_BUSFLAG_DUAL | SPICOMMON_BUSFLAG_NATIVE_PINS,
 	.comm_mode = SPIDEV_MODE0,
 	.frequency = SPI_DEFAULT_FREQUENCY,
 
@@ -1154,7 +1154,7 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 
 	if (priv->gpio_miso >= 0) {
 		gpio_matrix_in(priv->gpio_miso, p_pin_sig->spimiso_in, 0);
-		func = (INPUT | FUNCTION_2);
+		func = (INPUT | FUNCTION_1);
 		if (priv->work_mode & SPICOMMON_BUSFLAG_DUAL) {
 			gpio_matrix_out(priv->gpio_miso, p_pin_sig->spimiso_out, 0, 0);
 			func |= OUTPUT;
@@ -1180,7 +1180,7 @@ static void esp32_spi_pins_initialize(struct esp32_spidev_s *priv)
 		esp32_configgpio(priv->gpio_clk, func);
 	}
 	if (priv->work_mode & SPICOMMON_BUSFLAG_MASTER) {
-		for (int i = 1; i < MAX_CS_NUM; i++) {
+		for (int i = 0; i < MAX_CS_NUM; i++) {
 			if (priv->gpio_nss[i] >= 0 && priv->gpio_nss[i] < GPIO_PIN_COUNT) {
 				if (i == 0)
 					gpio_matrix_in(priv->gpio_nss[i], p_pin_sig->spics_in, 0);
@@ -1572,7 +1572,7 @@ struct spi_dev_s *up_spiinitialize(int port)
 		esp32_spi_Disable_ints(priv);
 		esp32_spi_Clear_ints(priv);
 
-		spi_select_device(priv, 1, &def_dev_config);
+		spi_select_device(priv, 0, &def_dev_config);
 
 		priv->initiallized = true;
 	}

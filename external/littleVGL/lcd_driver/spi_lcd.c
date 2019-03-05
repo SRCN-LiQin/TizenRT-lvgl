@@ -285,11 +285,11 @@ uint32_t lcd_init(lcd_conf_t* lcd_conf, spi_device_handle_t *spi_wr_dev, lcd_dc_
     };
     spi_device_handle_t rd_id_handle;
     spi_bus_add_device(lcd_conf->spi_host, &devcfg, &rd_id_handle);*/
-    SPI_SELECT(lcd_handle, 1, true);
+    SPI_SELECT(lcd_handle, 0, true);
     SPI_SETBITS(lcd_handle, 8);
     SPI_SETMODE(lcd_handle, SPIDEV_MODE0);
-    SPI_SETFREQUENCY(lcd_handle, (1 * 1000 * 1000));
-    //SPI_SETFREQUENCY(lcd_handle, lcd_conf->clk_freq);
+    //SPI_SETFREQUENCY(lcd_handle, (1 * 1000 * 1000));
+    SPI_SETFREQUENCY(lcd_handle, lcd_conf->clk_freq);
     uint32_t lcd_id = lcd_get_id(lcd_handle, dc);
     //spi_bus_remove_device(rd_id_handle);
 

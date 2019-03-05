@@ -27,8 +27,6 @@
 #include "iot_lcd.h"
 #include "lcd_adapter.h"
 
-
-
 class CEspLcdAdapter : public CEspLcd
 {
 public:
@@ -212,6 +210,7 @@ void board_lcd_set_orientation(uint16_t orientation)
 void ex_disp_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_p)
 {
     lcd_obj->drawBitmap((int16_t)x1, (int16_t)y1, (const uint16_t *)color_p, (int16_t)(x2 - x1 + 1), (int16_t)(y2 - y1 + 1));
+
     /* IMPORTANT!!!
      * Inform the graphics library that you are ready with the flushing*/
     lv_flush_ready();
@@ -243,7 +242,7 @@ void lvgl_lcd_display_init()
         .pin_num_bckl = CONFIG_LVGL_LCD_BL_GPIO,
         .clk_freq = CONFIG_LVGL_LCD_SPI_CLOCK,
         .rst_active_level = 0,
-        .bckl_active_level = 0,//CONFIG_LVGL_BCKL_ACTIVE_LEVEL, seems 0 or 1
+        .bckl_active_level = 1,//CONFIG_LVGL_BCKL_ACTIVE_LEVEL, seems 0 or 1
         .spi_host = 2, //(spi_host_device_t)CONFIG_LVGL_LCD_SPI_NUM, means HSPI, replaced by spi port para ->ESP32  HSPI_PORT
         .init_spi_bus = true,
     };
@@ -259,19 +258,19 @@ void lvgl_lcd_display_init()
 #ifdef CONFIG_LVGL_DISP_ROTATE_0
     board_lcd_write_cmd(ILI9341_MEMACCESS_REG);
     board_lcd_write_data_byte(0x80 | 0x08);
-    printf("lvgl_example", "CONFIG_LVGL_DISP_ROTATE_0");
+    printf("lvgl_example, CONFIG_LVGL_DISP_ROTATE_0\n");
 #elif defined(CONFIG_LVGL_DISP_ROTATE_90)
     board_lcd_write_cmd(ILI9341_MEMACCESS_REG);
     board_lcd_write_data_byte(0x20 | 0x08);
-    printf("lvgl_example", "CONFIG_LVGL_DISP_ROTATE_90");
+    printf("lvgl_example, CONFIG_LVGL_DISP_ROTATE_90\n");
 #elif defined(CONFIG_LVGL_DISP_ROTATE_180)
     board_lcd_write_cmd(ILI9341_MEMACCESS_REG);
     board_lcd_write_data_byte(0x40 | 0x08);
-    printf("lvgl_example", "CONFIG_LVGL_DISP_ROTATE_180");
+    printf("lvgl_example, CONFIG_LVGL_DISP_ROTATE_180\n");
 #elif defined(CONFIG_LVGL_DISP_ROTATE_270)
     board_lcd_write_cmd(ILI9341_MEMACCESS_REG);
     board_lcd_write_data_byte(0xE0 | 0x08);
-    printf("lvgl_example", "CONFIG_LVGL_DISP_ROTATE_270");
+    printf("lvgl_example, CONFIG_LVGL_DISP_ROTATE_270\n");
 #endif
 
     /* Set up the functions to access to your display */

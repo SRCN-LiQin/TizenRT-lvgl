@@ -282,6 +282,6 @@ void clock_timer(void)
 	/* Increment the per-tick system counter */
 
 	g_system_timer++;
-	lv_tick_inc(1);
+	lv_tick_inc(TICK2MSEC(1));
 }
 #endif
