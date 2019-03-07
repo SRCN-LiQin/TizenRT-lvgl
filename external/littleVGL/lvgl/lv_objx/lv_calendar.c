@@ -719,7 +719,7 @@ static lv_coord_t get_day_names_height(lv_obj_t * calendar)
 {
     lv_calendar_ext_t * ext = lv_obj_get_ext_attr(calendar);
 
-    return lv_font_get_height(ext->style_day_names->text.font) + ext->style_day_names->body.padding.ver * 2;
+    return lv_font_get_height(ext->style_day_names->text.font) + ext->style_day_names->body.padding.ver;// * 2;
 }
 
 /**
@@ -777,7 +777,7 @@ static void draw_day_names(lv_obj_t * calendar, const lv_area_t * mask)
     lv_coord_t w = lv_obj_get_width(calendar) - 2 * hpad;
     lv_coord_t box_w = w / 7;
     lv_area_t label_area;
-    label_area.y1 = calendar->coords.y1 + get_header_height(calendar) + ext->style_day_names->body.padding.ver;
+    label_area.y1 = calendar->coords.y1 + get_header_height(calendar);// + ext->style_day_names->body.padding.ver;
     label_area.y2 = label_area.y1 + lv_font_get_height(ext->style_day_names->text.font);
     uint32_t i;
     for(i = 0; i < 7; i++) {
@@ -800,9 +800,8 @@ static void draw_days(lv_obj_t * calendar, const lv_area_t * mask)
     lv_coord_t hpad = style_bg->body.padding.hor;
     lv_area_t label_area;
     lv_opa_t opa_scale = lv_obj_get_opa_scale(calendar);
-    label_area.y1 = calendar->coords.y1 + get_header_height(calendar) +
-            ext->style_day_names->body.padding.ver + lv_font_get_height(ext->style_day_names->text.font) + 
-            ext->style_day_names->body.padding.ver;
+    label_area.y1 = calendar->coords.y1 + get_header_height(calendar) 
+    				+ lv_font_get_height(ext->style_day_names->text.font);// + ext->style_day_names->body.padding.ver * 2;            
     label_area.y2 = label_area.y1 + lv_font_get_height(style_bg->text.font);
 
     lv_coord_t w = lv_obj_get_width(calendar) - 2 * hpad;

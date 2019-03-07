@@ -30,8 +30,12 @@ static void* ui_refresh_task(void *arg)
 {
 	int i = 1;
 	while (1) {
-		sleep(6);
-		lv_tabview_set_tab_act(tabview, i, true);
+		sleep(20);
+		if(tabview) {
+			lv_tabview_set_tab_act(tabview, i, true);
+		} else {
+			lv_test_theme_tab(i);
+		}
 		i++;
 		i %= 3;
 	}
@@ -114,7 +118,17 @@ static void* list_refresh_task(void *arg)
 
 #endif
 
-#define SELECT_THEME lv_theme_night_init
+lv_theme_t* init_theme(int para)
+{
+	if (para  == 1) {
+		return lv_theme_nemo_init(100,NULL);
+	} else if (para == 2) {
+		return lv_theme_night_init(100,NULL);
+	} else if (para == 3) {
+		return lv_theme_alien_init(100,NULL);
+	}
+}
+
 
 int lvgl_main(int argc, FAR char *argv[])
 {
@@ -126,6 +140,10 @@ int lvgl_main(int argc, FAR char *argv[])
 		return -1;
 	}
 
+	if (argc < 3) {
+		printf("argc %d , Need 2 para, 1st for test widgets, 2nd for theme\n",argc);
+		return;
+	}
 #if TEST_BAISC_TEXT
 	lv_style_t style;
 	lv_obj_t *screen = lv_scr_act();
@@ -154,7 +172,7 @@ if (atoi(argv[1]) == 1) {
 	lv_obj_t *scr = lv_obj_create(NULL, NULL);
 	lv_scr_load(scr);
 
-	lv_theme_t *th = SELECT_THEME(100, NULL);
+	lv_theme_t *th = init_theme(atoi(argv[2]));
 	lv_theme_set_current(th);
 
 	tabview = lv_tabview_create(lv_scr_act(), NULL);  //ANIMATION EXAMPLE
@@ -217,7 +235,7 @@ if(atoi(argv[1]) == 2) {
 	lv_obj_t *scr = lv_obj_create(NULL, NULL);
 	lv_scr_load(scr);
 
-	lv_theme_t *th = SELECT_THEME(100, NULL);
+	lv_theme_t *th = init_theme(atoi(argv[2]));
 	lv_theme_set_current(th);
 
 	lv_obj_t * parent = scr;//lv_page_create(scr, NULL);
@@ -353,19 +371,34 @@ if(atoi(argv[1]) == 2) {
 
 	roller = lv_roller_create(h, NULL); // ==> GOOD SCROLLER effect
 	lv_roller_set_options(roller, "Monday\nTuesday\nWednesday\nThursday\nFriday\nSaturday\nSunday");
-	lv_roller_set_selected(roller, 3, true);
 	lv_roller_set_visible_row_count(roller, 5);
 	lv_ddlist_set_action(roller, roller_action);
 	lv_ddlist_set_anim_time(roller, 1000);
 	lv_obj_set_pos(roller, 140, 20);
+	lv_roller_set_selected(roller, 3, true);
 	
 	if (pthread_create(&list_thread_id, NULL, list_refresh_task, NULL) != 0) {
 		printf("failed to create refresh task\n");
 		return -1;
 	}
 	pthread_setname_np(list_thread_id, "UI_LIST");
-}
+} else
 #endif
+	if(atoi(argv[1]) == 3) {
+		//lv_obj_t *scr = lv_obj_create(NULL, NULL);
+		//lv_scr_load(scr);
+	
+		lv_theme_t *th = init_theme(atoi(argv[2]));
+		lv_test_theme_1(th);
+
+		if (pthread_create(&ui_thread_id, NULL, ui_refresh_task, NULL) != 0) {
+			printf("failed to create refresh task\n");
+			return -1;
+		}
+		pthread_setname_np(ui_thread_id, "UI_animation");
+		pthread_detach(ui_thread_id);
+
+	}
 
 	return 0;
 }

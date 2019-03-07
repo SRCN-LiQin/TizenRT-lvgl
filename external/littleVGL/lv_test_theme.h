@@ -32,7 +32,7 @@ extern "C" {
  * @param th pointer to a theme
  */
 void lv_test_theme_1(lv_theme_t *th);
-
+void lv_test_theme_tab(int id);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -109,7 +109,7 @@ lv_obj_t * lv_tabview_create(lv_obj_t * par, const lv_obj_t * copy)
         lv_obj_set_size(new_tabview, LV_HOR_RES, LV_VER_RES);
 
         ext->btns = lv_btnm_create(new_tabview, NULL);
-        lv_obj_set_height(ext->btns, 3 * LV_DPI / 4);
+        lv_obj_set_height(ext->btns, LV_DPI / 2);
         lv_btnm_set_map(ext->btns, tab_def);
         lv_btnm_set_action(ext->btns, tab_btnm_action);
         lv_btnm_set_toggle(ext->btns, true, 0);
